@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng điều khiển - BizFlow Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+<div id="admin-header"></div>
+
+<div class="container my-5 flex-grow-1">
+    <h1 class="mb-4">Bảng điều khiển quản trị</h1>
+
+    <!-- 4 THẺ THỐNG KÊ -->
+    <div class="row mb-4" id="stats-container">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Tổng đơn hàng</h5>
+                    <h2 class="card-text" id="stat-orders">...</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Doanh thu</h5>
+                    <h2 class="card-text" id="stat-revenue">...</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-dark bg-warning shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Sản phẩm</h5>
+                    <h2 class="card-text" id="stat-products">...</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Người dùng</h5>
+                    <h2 class="card-text" id="stat-users">...</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BẢNG ĐƠN HÀNG GẦN ĐÂY -->
+    <h2 class="mb-3">10 Đơn hàng gần đây</h2>
+    <div class="table-responsive bg-white shadow-sm">
+        <table class="table table-bordered table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Ngày đặt</th>
+                    <th>Khách hàng</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="recent-orders-body">
+                <tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="admin-footer"></div>
+
+<script>
+    const API_DASHBOARD = 'http://127.0.0.1:8000/dashboard/stats';
+    const API_ORDERS = 'http://127.0.0.1:8000/orders/';
+
+    // Hàm định dạng ngày tháng
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const d = new Date(dateString);
+        return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN');
+    }
+
+    // Tải dữ liệu thống kê
+    async function loadStats() {
+        try {
+            const response = await fetch(API_DASHBOARD);
+            if (!response.ok) throw new Error('API lỗi');
+            const data = await response.json();
+
+            document.getElementById('stat-orders').innerText = data.total_orders;
+            document.getElementById('stat-revenue').innerText = (data.total_revenue || 0).toLocaleString() + ' VNĐ';
+            document.getElementById('stat-products').innerText = data.total_products;
+            document.getElementById('stat-users').innerText = data.total_users;
+        } catch (error) {
+            console.error("Lỗi khi tải thống kê:", error);
+        }
+    }
+
+    // Tải danh sách đơn hàng gần đây
+    async function loadRecentOrders() {
+        try {
+            const response = await fetch(API_ORDERS);
+            const orders = await response.json();
+            
+            const tbody = document.getElementById('recent-orders-body');
+            tbody.innerHTML = '';
+
+            // Cắt lấy tối đa 10 đơn hàng mới nhất
+            const recentOrders = orders.slice(0, 10);
+
+            if (recentOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có đơn hàng nào.</td></tr>';
+                return;
+            }
+
+            recentOrders.forEach(order => {
+                const statusBadge = order.status === 'completed' 
+                    ? '<span class="badge bg-success">Hoàn thành</span>' 
+                    : `<span class="badge bg-secondary">${order.status}</span>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>#${order.id}</td>
+                        <td>${formatDate(order.created_at)}</td>
+                        <td>${order.username || 'User ' + order.user_id}</td>
+                        <td class="text-danger fw-bold">${order.total.toLocaleString()} VNĐ</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <!-- Chuyển hướng sang trang quản lý đơn hàng -->
+                            <a href="admin-orders.html" class="btn btn-primary btn-sm">Quản lý</a>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (error) {
+            document.getElementById('recent-orders-body').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Lỗi kết nối Server!</td></tr>';
+        }
+    }
+
+    // Chạy khi tải trang
+    window.onload = () => {
+        loadStats();
+        loadRecentOrders();
+    };
+</script>
+
+<script src="layout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

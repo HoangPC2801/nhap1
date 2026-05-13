@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý sản phẩm - BizFlow Admin</title>
+    <!-- Nhúng Bootstrap để giữ giao diện đẹp -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+<div id="admin-header"></div>
+
+<div class="container my-5 flex-grow-1">
+    <h1 class="mb-4">Quản lý sản phẩm</h1>
+
+    <!-- Thông báo trạng thái -->
+    <div id="message-box" class="alert d-none"></div>
+
+    <!-- Nút thêm sản phẩm -->
+    <div class="mb-3">
+        <button id="add-product-btn" class="btn btn-primary">Thêm sản phẩm</button>
+    </div>
+
+    <!-- FORM THÊM SẢN PHẨM -->
+    <div id="add-product-form" class="card mb-4" style="display: none;">
+        <div class="card-body">
+            <h2>Thêm sản phẩm mới</h2>
+            <form id="form-add" onsubmit="handleAddProduct(event)">
+                <div class="mb-3">
+                    <label>Tên sản phẩm</label>
+                    <input type="text" id="name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Mô tả</label>
+                    <textarea id="description" class="form-control" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label>Giá</label>
+                    <input type="number" id="price" class="form-control" min="0" required>
+                </div>
+                <div class="mb-3">
+                    <label>Hình ảnh (Nhập URL tạm thời)</label>
+                    <input type="text" id="image" class="form-control" placeholder="https://...">
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Danh mục</label>
+                        <select id="category" class="form-select" required>
+                            <option value="Thể thao">Thể thao</option>
+                            <option value="Chạy bộ">Chạy bộ</option>
+                            <option value="Công sở">Công sở</option>
+                            <option value="Sneaker">Sneaker</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Thương hiệu</label>
+                        <select id="brand" class="form-select" required>
+                            <option value="Nike">Nike</option>
+                            <option value="Adidas">Adidas</option>
+                            <option value="Bitis">Bitis</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Số lượng tồn kho</label>
+                    <input type="number" id="stock_quantity" class="form-control" min="0" value="0">
+                </div>
+                <button type="submit" class="btn btn-success">Lưu sản phẩm</button>
+                <button type="button" id="cancel-add" class="btn btn-secondary">Hủy</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- BẢNG DANH SÁCH SẢN PHẨM -->
+    <table class="table table-bordered table-striped bg-white">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Tên</th>
+                <th>Giá</th>
+                <th>Danh mục</th>
+                <th>Thương hiệu</th>
+                <th>Tồn kho</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="product-table-body">
+            <tr><td colspan="7" class="text-center">Đang tải dữ liệu...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="admin-footer"></div>
+
+<script>
+    const API_URL = 'http://127.0.0.1:8000/products/';
+
+    // Logic ẩn/hiện form thêm sản phẩm
+    document.getElementById('add-product-btn').addEventListener('click', function() {
+        document.getElementById('add-product-form').style.display = 'block';
+    });
+    document.getElementById('cancel-add').addEventListener('click', function() {
+        document.getElementById('add-product-form').style.display = 'none';
+    });
+
+    // Hàm hiển thị thông báo
+    function showMessage(msg, isError = false) {
+        const box = document.getElementById('message-box');
+        box.className = `alert ${isError ? 'alert-danger' : 'alert-success'}`;
+        box.textContent = msg;
+        setTimeout(() => box.classList.add('d-none'), 3000);
+    }
+
+    // Lấy danh sách sản phẩm từ FastAPI
+    async function fetchProducts() {
+        try {
+            const response = await fetch(API_URL);
+            const products = await response.json();
+            const tbody = document.getElementById('product-table-body');
+            tbody.innerHTML = '';
+
+            products.forEach(product => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${product.id}</td>
+                        <td>${product.name}</td>
+                        <td>${product.price.toLocaleString()} VNĐ</td>
+                        <td>${product.category}</td>
+                        <td>${product.brand}</td>
+                        <td>${product.stock_quantity || 0}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (error) {
+            console.error(error);
+            document.getElementById('product-table-body').innerHTML = '<tr><td colspan="7">Lỗi kết nối API!</td></tr>';
+        }
+    }
+
+    // Xử lý Thêm sản phẩm
+    async function handleAddProduct(event) {
+        event.preventDefault(); 
+
+        const newProduct = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            price: parseFloat(document.getElementById('price').value),
+            image: document.getElementById('image').value,
+            category: document.getElementById('category').value,
+            brand: document.getElementById('brand').value,
+            stock_quantity: parseInt(document.getElementById('stock_quantity').value)
+        };
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newProduct)
+            });
+
+            if (response.ok) {
+                showMessage("Đã thêm sản phẩm thành công!");
+                document.getElementById('form-add').reset();
+                document.getElementById('add-product-form').style.display = 'none';
+                fetchProducts(); 
+            } else {
+                showMessage("Lỗi khi thêm sản phẩm!", true);
+            }
+        } catch (error) {
+            showMessage("Không thể kết nối đến Server", true);
+        }
+    }
+
+    // Xử lý Xóa sản phẩm
+    async function deleteProduct(id) {
+        if (!confirm('Bạn chắc chắn muốn xóa?')) return;
+
+        try {
+            const response = await fetch(`${API_URL}${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                showMessage("Đã xóa sản phẩm thành công!");
+                fetchProducts(); 
+            } else {
+                showMessage("Lỗi khi xóa sản phẩm!", true);
+            }
+        } catch (error) {
+            showMessage("Không thể kết nối đến Server", true);
+        }
+    }
+
+    // Chạy khi mở trang
+    window.onload = fetchProducts;
+</script>
+
+<script src="layout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+</body>
+</html>

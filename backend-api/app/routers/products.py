@@ -32,3 +32,19 @@ def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)
     db.refresh(new_product)
     
     return new_product
+
+@router.delete("/{product_id}")
+def delete_product(product_id: int, db: Session = Depends(database.get_db)):
+    # 1. Tìm sản phẩm trong Database
+    product_query = db.query(models.Product).filter(models.Product.id == product_id)
+    product = product_query.first()
+    
+    # 2. Nếu không có sản phẩm nào có ID này -> Báo lỗi
+    if not product:
+        raise HTTPException(status_code=404, detail="Không tìm thấy sản phẩm cần xóa")
+    
+    # 3. Tiến hành xóa và lưu thay đổi vào DB
+    product_query.delete(synchronize_session=False)
+    db.commit()
+    
+    return {"message": f"Đã xóa thành công sản phẩm có ID: {product_id}"}

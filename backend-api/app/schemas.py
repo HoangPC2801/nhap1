@@ -43,11 +43,10 @@ class ProductBase(BaseModel):
 # Schema dùng để trả dữ liệu về cho Client (App/Web)
 class Product(ProductBase):
     id: int
-    category: Optional[Category] = None
-    created_at: Optional[datetime] = None
-
+    category_rel: Optional[Category] = None  
+    
     class Config:
-        from_attributes = True 
+        from_attributes = True
 
 
 # Khuôn dùng để nhận dữ liệu khi Tạo mới
