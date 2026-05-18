@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from .. import models, schemas, database
@@ -14,11 +14,11 @@ def get_all_products(db: Session = Depends(database.get_db)):
     products = db.query(models.Product).all()
     return products
 
-@router.get("/{product_id}", response_model=schemas.Product)
-def get_product(product_id: int, db: Session = Depends(database.get_db)):
+@router.get("/{product_id}", response_model=schemas.Product) 
+def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if not product:
-        raise HTTPException(status_code=404, detail="Không tìm thấy đôi giày này")
+        raise HTTPException(status_code=404, detail="Product not found")
     return product
 
 @router.post("/", response_model=schemas.ProductResponse)
@@ -48,3 +48,20 @@ def delete_product(product_id: int, db: Session = Depends(database.get_db)):
     db.commit()
     
     return {"message": f"Đã xóa thành công sản phẩm có ID: {product_id}"}
+
+@router.put("/{product_id}", response_model=schemas.Product)
+def update_product(product_id: int, product: schemas.ProductUpdate, db: Session = Depends(get_db)):
+    # 1. Tìm sản phẩm trong DB
+    db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not db_product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy sản phẩm")
+
+    # 2. Cập nhật các trường có gửi lên
+    update_data = product.dict(exclude_unset=True) # Chỉ lấy các trường có giá trị truyền vào
+    for key, value in update_data.items():
+        setattr(db_product, key, value)
+
+    # 3. Lưu vào database
+    db.commit()
+    db.refresh(db_product)
+    return db_product

@@ -118,7 +118,7 @@
 
             recentOrders.forEach(order => {
                 const statusBadge = order.status === 'completed' 
-                    ? '<span class="badge bg-success">Hoàn thành</span>' 
+                    ? '<span class="badge bg-success">completed</span>' 
                     : `<span class="badge bg-secondary">${order.status}</span>`;
 
                 tbody.innerHTML += `

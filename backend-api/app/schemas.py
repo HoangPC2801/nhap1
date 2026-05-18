@@ -62,6 +62,15 @@ class ProductResponse(ProductBase):
     class Config:
         from_attributes = True # (hoặc orm_mode = True nếu bạn đang dùng Pydantic bản cũ)
 
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    stock: Optional[int] = None
+    category_id: Optional[int] = None
+    image_url: Optional[str] = None
+
+
 # SCHEMAS CHO GIỎ HÀNG
 class CartItemBase(BaseModel):
     product_id: int
