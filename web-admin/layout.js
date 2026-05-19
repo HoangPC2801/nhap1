@@ -14,7 +14,7 @@ const adminHeaderHTML = `
         
         <div class="logo">
             <a href="admin-dashboard.html" class="text-white text-decoration-none fs-4 fw-bold">
-                ShoeStore Admin
+                HoangShoes
             </a>
         </div>
 
@@ -55,18 +55,18 @@ const adminFooterHTML = `
             <div class="col-md-4 mb-3">
                 <h5 class="text-uppercase text-primary">Về chúng tôi</h5>
                 <p class="small text-light">
-                    BizFlow Admin - Hệ thống quản lý cửa hàng giày uy tín, chất lượng hàng đầu Việt Nam.
+                    HoangShoes - Hệ thống quản lý cửa hàng giày uy tín, chất lượng hàng đầu Việt Nam.
                 </p>
             </div>
             <div class="col-md-4 mb-3">
                 <h5 class="text-uppercase text-primary">Liên hệ</h5>
-                <p class="small text-light mb-1">- Email: admin@bizflow.com</p>
+                <p class="small text-light mb-1">- Email: admin@hoangshowes.com</p>
                 <p class="small text-light">- Điện thoại: 0123 456 789</p>
             </div>
             <div class="col-md-4 mb-3">
                 <h5 class="text-uppercase text-primary">Địa chỉ</h5>
                 <p class="small text-light">
-                    - 123 Đường ABC, TP. Hồ Chí Minh
+                    - Tân Bình, TP. Hồ Chí Minh
                 </p>
             </div>
         </div>
@@ -74,7 +74,7 @@ const adminFooterHTML = `
         <hr class="border-secondary my-3">
 
         <div class="text-center small text-light">
-            <p class="mb-0">&copy; 2026 BizFlow Admin. All rights reserved.</p>
+            <p class="mb-0">&copy; 2026 HoangShoes Admin. Phạm Công Hoàng.</p>
         </div>
     </div>
 </footer>
@@ -113,22 +113,7 @@ function handleLogout() {
 // 7. Auto load
 document.addEventListener('DOMContentLoaded', loadLayout);
 
-// 1. Khởi tạo Firebase (Dán đoạn mã bạn copy ở Giai đoạn 1 vào đây)
-const firebaseConfig = {
-  apiKey: "AIzaSyCyuP7fgmTj0yPQh_3J8-IC7kl8QoLpqvE",
-  authDomain: "appbangiay-dac0f.firebaseapp.com",
-  projectId: "appbangiay-dac0f",
-  storageBucket: "appbangiay-dac0f.firebasestorage.app",
-  messagingSenderId: "641802044909",
-  appId: "1:641802044909:web:25d85ecbae1be8f00393e4",
-  measurementId: "G-R9HPQE536Z"
-};
 
-// Kiểm tra tránh khởi tạo lại nếu đã khởi tạo
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const storage = firebase.storage();
 
 // 2. Hàm xử lý khi bấm nút "Lưu sản phẩm"
 async function handleAddProduct() {
@@ -356,10 +341,11 @@ async function loadOrders(statusFilter = '') {
                 
             let statusSelect = `
                 <select class="form-select form-select-sm" onchange="updateOrderStatus('${orderId}', this.value)">
-                    <option value="pending" ${order.status==='pending'?'selected':''}>Pending</option>
-                    <option value="processing" ${order.status==='processing'?'selected':''}>Processing</option>
-                    <option value="completed" ${order.status==='completed'?'selected':''}>Completed</option>
-                    <option value="cancelled" ${order.status==='cancelled'?'selected':''}>Cancelled</option>
+                    <option value="pending" ${order.status==='pending'?'selected':''}>Chờ xử lý</option>
+                    <option value="processing" ${order.status==='processing'?'selected':''}>Đang xử lý</option>
+                    <option value="shipped" ${order.status==='shipped'?'selected':''}>Đang giao</option>
+                    <option value="completed" ${order.status==='completed'?'selected':''}>Hoàn thành</option>
+                    <option value="cancelled" ${order.status==='cancelled'?'selected':''}>Đã hủy</option>
                 </select>
             `;
 
@@ -476,11 +462,11 @@ async function viewOrderDetail(orderId) {
             tbody.innerHTML = ''; // Xóa sạch dữ liệu cũ trước khi đổ mới
 
             // Nếu không có chi tiết món hàng hoặc mảng trống
-            if (!order.order_items || order.order_items.length === 0) {
+            if (!order.items || order.items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Đơn hàng này không có chi tiết sản phẩm.</td></tr>`;
             } else {
                 // Duyệt qua từng món hàng để hiển thị lên bảng
-                order.order_items.forEach((item, index) => {
+                order.items.forEach((item, index) => {
                     const imgUrl = item.image_url || 'https://via.placeholder.com/50';
                     tbody.innerHTML += `
                         <tr>

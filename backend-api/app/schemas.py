@@ -68,7 +68,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = None
     stock: Optional[int] = None
     category_id: Optional[int] = None
-    image_url: Optional[str] = None
+    image: Optional[str] = None
 
 
 # SCHEMAS CHO GIỎ HÀNG
@@ -94,12 +94,20 @@ class OrderItemBase(BaseModel):
     quantity: int
     price: float
 
+class OrderItemOut(OrderItemBase):
+    id: int
+    # Sử dụng class Product (đã khai báo ở trên) để lồng thông tin tên, hình ảnh,...
+    product: Optional[Product] = None 
+
+    class Config:
+        from_attributes = True
+
 class OrderCreate(BaseModel):
     user_id: int
     total: float
     shipping_address: str
     payment_method: str
-    items: List[OrderItemBase] # Một đơn hàng chứa nhiều sản phẩm
+    items: List[OrderItemBase]
 
 class OrderStatusUpdate(BaseModel):
     status: str  # Ví dụ: 'processing', 'shipped', 'completed', 'cancelled'
@@ -112,6 +120,8 @@ class OrderOut(BaseModel):
     shipping_address: str
     payment_method: str
     created_at: datetime
+    
+    items: List[OrderItemOut] = []
 
     class Config:
         from_attributes = True

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 from .. import models, database
 
@@ -8,7 +8,10 @@ router = APIRouter(prefix="/orders", tags=["Orders"])
 # 1. Lấy danh sách kèm theo lọc trạng thái
 @router.get("/")
 def get_orders(status: Optional[str] = None, db: Session = Depends(database.get_db)):
-    query = db.query(models.Order, models.User.username).join(models.User, models.Order.user_id == models.User.id)
+    query = db.query(models.Order, models.User.username)\
+              .join(models.User, models.Order.user_id == models.User.id)\
+              .options(joinedload(models.Order.items).joinedload(models.OrderDetail.product))
+              
     if status:
         query = query.filter(models.Order.status == status)
         
@@ -16,12 +19,26 @@ def get_orders(status: Optional[str] = None, db: Session = Depends(database.get_
     
     result = []
     for order, username in orders_data:
+        items_data = []
+        for item in order.items:
+            items_data.append({
+                "quantity": item.quantity,
+                "price": item.price,
+                "product": {
+                    "name": item.product.name if item.product else "Sản phẩm lỗi/Đã xóa"
+                }
+            })
+            
+        # Đóng gói dữ liệu trả về cho Frontend
         result.append({
             "id": order.id,
             "created_at": order.created_at,
             "total": order.total,
             "status": order.status,
-            "username": username
+            "username": username,
+            "shipping_address": order.shipping_address,
+            "payment_method": order.payment_method,
+            "items": items_data 
         })
     return result
 
@@ -42,31 +59,13 @@ def update_order_status(order_id: int, status: str, db: Session = Depends(databa
 
 @router.get("/{order_id}")
 def get_order_detail(order_id: int, db: Session = Depends(database.get_db)):
-    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    order = db.query(models.Order)\
+              .options(
+                  joinedload(models.Order.items).joinedload(models.OrderDetail.product)
+              )\
+              .filter(models.Order.id == order_id)\
+              .first()
+              
     if not order:
         raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
-    
-    items_query = db.query(models.OrderDetail, models.Product.name, models.Product.image_url)\
-        .join(models.Product, models.OrderDetail.product_id == models.Product.id)\
-        .filter(models.OrderDetail.order_id == order_id).all()
-    
-    order_items = []
-    for item, prod_name, prod_image in items_query:
-        order_items.append({
-            "id": item.id,
-            "product_id": item.product_id,
-            "product_name": prod_name,
-            "image_url": prod_image,
-            "quantity": item.quantity,
-            "price": item.price,
-            "total_price": item.quantity * item.price
-        })
-    
-    return {
-        "id": order.id,
-        "created_at": order.created_at,
-        "total": order.total,
-        "status": order.status,
-        "user_id": order.user_id,
-        "order_items": order_items 
-    }
+    return order

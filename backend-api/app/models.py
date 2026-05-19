@@ -83,6 +83,7 @@ class OrderDetail(Base):
     price = Column(Float)
 
     order = relationship("Order", back_populates="items")
+    product = relationship("Product")
 
 class Cart(Base):
     __tablename__ = "cart"
